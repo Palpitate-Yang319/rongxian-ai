@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>荣县陶韵 · 文旅智询</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(145deg, #f7f3eb 0%, #ede3d3 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: radial-gradient(circle at 20% 30%, rgba(180,130,90,0.08) 0%, transparent 35%),
+                            radial-gradient(circle at 80% 70%, rgba(140,100,60,0.06) 0%, transparent 40%);
+            pointer-events: none; z-index: 0;
+        }
+
+        .main-card {
+            position: relative; z-index: 2;
+            width: 100%; max-width: 820px;
+            background: rgba(255,250,245,0.85);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            background: linear-gradient(135deg, rgba(255,250,245,0.95) 0%, rgba(250,240,230,0.95) 100%);
+            border-radius: 2.5rem;
+            box-shadow: 0 30px 50px rgba(100,70,40,0.25), 0 10px 25px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.6);
+            border: 1px solid rgba(200,160,120,0.3);
+            display: flex; flex-direction: column;
+            height: 90vh; max-height: 750px;
+        }
+
+        .header {
+            padding: 1.8rem 2rem 1.2rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(180,130,90,0.25);
+            flex-shrink: 0;
+        }
+
+        .logo-area {
+            display: flex; align-items: center; justify-content: center;
+            gap: 0.5rem; margin-bottom: 0.3rem;
+        }
+
+        .clay-icon {
+            font-size: 2.5rem;
+            filter: drop-shadow(0 6px 8px rgba(120,70,30,0.3));
+        }
+
+        h1 {
+            font-size: 2rem; font-weight: 600; letter-spacing: 2px;
+            color: #5e3a1c;
+            text-shadow: 1px 1px 0 rgba(255,255,240,0.8);
+            margin: 0; line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: 0.85rem; font-weight: 500; color: #7b5c42;
+            background: rgba(210,170,120,0.2);
+            padding: 0.25rem 1.5rem; border-radius: 30px;
+            display: inline-block; margin-top: 0.3rem; letter-spacing: 0.8px;
+        }
+
+        .api-status {
+            font-size: 0.75rem; color: #8b7355;
+            margin-top: 0.5rem;
+            display: flex; align-items: center; justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%; background: #4CAF50;
+            display: inline-block;
+        }
+
+        .status-dot.error { background: #f44336; }
+
+        .chat-container {
+            flex: 1; display: flex; flex-direction: column;
+            padding: 1rem 1.5rem 1.5rem; overflow: hidden;
+        }
+
+        .messages-box {
+            flex: 1; overflow-y: auto; padding-right: 0.5rem;
+            margin-bottom: 1rem;
+            display: flex; flex-direction: column; gap: 0.8rem;
+            scroll-behavior: smooth;
+        }
+
+        .messages-box::-webkit-scrollbar { width: 5px; }
+        .messages-box::-webkit-scrollbar-track { background: rgba(200,160,120,0.2); border-radius: 10px; }
+        .messages-box::-webkit-scrollbar-thumb { background: #b08968; border-radius: 10px; }
+
+        .message {
+            display: flex; gap: 0.6rem;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .message.user { justify-content: flex-end; }
+
+        .avatar {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: #e7d7c0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+            flex-shrink: 0;
+        }
+
+        .user .avatar { background: #c49a6c; color: white; order: 2; }
+
+        .bubble {
+            max-width: 78%; padding: 0.8rem 1.2rem; border-radius: 1.5rem;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(120,70,20,0.1);
+            line-height: 1.6; font-size: 0.95rem; color: #2d2a24;
+            word-break: break-word; white-space: pre-wrap;
+        }
+
+        .assistant .bubble {
+            background: #faf3e9;
+            border: 1px solid rgba(190,140,90,0.2);
+            border-bottom-left-radius: 0.4rem;
+        }
+
+        .user .bubble {
+            background: linear-gradient(135deg, #ddb892, #c89b6b);
+            color: #241e16;
+            border-bottom-right-radius: 0.4rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-area {
+            display: flex; gap: 0.8rem; align-items: center;
+            background: rgba(255,255,250,0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 3rem;
+            padding: 0.4rem 0.4rem 0.4rem 1.5rem;
+            border: 1px solid rgba(180,130,80,0.35);
+            box-shadow: 0 8px 20px rgba(100,60,20,0.12);
+            flex-shrink: 0;
+        }
+
+        #userInput {
+            flex: 1; border: none; background: transparent;
+            font-size: 0.95rem; padding: 0.7rem 0; outline: none;
+            color: #3e2e1f; font-weight: 500;
+        }
+
+        #userInput::placeholder { color: #b1977e; font-weight: 400; }
+
+        .send-btn {
+            background: #a47148; border: none;
+            width: 46px; height: 46px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(140,90,40,0.4);
+            color: white; font-size: 1.3rem; flex-shrink: 0;
+        }
+
+        .send-btn:hover:not(:disabled) { background: #8b5e3c; transform: scale(1.03); }
+        .send-btn:disabled { background: #c9b094; box-shadow: none; cursor: not-allowed; opacity: 0.7; }
+
+        .info-footer {
+            text-align: center; font-size: 0.7rem; color: #8b7355;
+            padding: 0.3rem 1rem 0.8rem; opacity: 0.8; flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-card">
+        <div class="header">
+            <div class="logo-area">
+                <span class="clay-icon">🏺</span>
+                <h1>荣县·陶语</h1>
+                <span class="clay-icon">🍵</span>
+            </div>
+            <div class="subtitle">四川荣县文旅 · 陶艺文化智能问答</div>
+            <div class="api-status">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">DeepSeek AI 就绪</span>
+            </div>
+        </div>
+
+        <div class="chat-container">
+            <div class="messages-box" id="messagesBox">
+                <div class="message assistant">
+                    <div class="avatar">🏯</div>
+                    <div class="bubble">
+                        您好！我是荣县文旅智能助手 🏯<br><br>
+                        由 <strong>DeepSeek 大模型</strong> 驱动，擅长回答荣县文旅相关问题。<br><br>
+                        🏺 荣县土陶 | 🙏 荣县大佛 | 🍜 特色美食 | 🗺️ 旅游路线<br><br>
+                        随便聊聊，荣县或其他话题都可以 ✨
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <input type="text" id="userInput" placeholder="随便聊聊，荣县或其他话题都可以..." autocomplete="off" />
+                <button class="send-btn" id="sendBtn">➤</button>
+            </div>
+            <div class="info-footer">
+                🧠 DeepSeek 大模型驱动 · 智能对话
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ============================================
+            // 🔑 在这里直接填入你的 DeepSeek API Key
+            // 获取地址：https://platform.deepseek.com/api_keys
+            // 充值1元即可使用很久
+            // ============================================
+            const API_KEY = 'sk-b21c6f2061444d2c8b5600968d239927';
+
+            const API_URL = 'https://api.deepseek.com/v1/chat/completions';
+            const MODEL = 'deepseek-chat';
+
+            // 系统提示词
+            const SYSTEM_PROMPT = `你是"荣县陶语"智能助手，由DeepSeek大模型驱动。
+
+【你的专长领域】
+你是四川荣县文旅与陶艺文化的专家，对以下内容了如指掌：
+1. 荣县土陶：千年历史、制作工艺、陶土特点、釉色种类、非遗传承、陶艺村体验
+2. 荣县大佛：唐代石刻、世界第一大释迦牟尼佛、大佛寺游览攻略、门票交通
+3. 玉章故里：吴玉章生平、红色旅游、爱国主义教育
+4. 自然风光：双溪湖、高石梯森林公园
+5. 荣县美食：浑浆豆花、羊肉汤、麻辣鸡、凉粉等特色小吃
+6. 旅游规划：一日游/两日游路线、交通住宿建议
+7. 荣县非遗：土陶技艺、川剧、龙舞、竹编等
+
+【回答原则】
+- 当用户询问荣县相关话题时，你要展现出专家的水平，回答专业、详细、热情，适当使用emoji
+- 当用户询问其他话题时，你也要尽力回答，作为正常的AI助手提供服务
+- 保持友好、乐于助人的态度
+- 信息要准确，不确定的内容请诚实说明
+- 回答结构清晰、易于阅读`;
+
+            const messagesBox = document.getElementById('messagesBox');
+            const userInput = document.getElementById('userInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+
+            let isProcessing = false;
+            let conversationHistory = [
+                { role: "system", content: SYSTEM_PROMPT }
+            ];
+
+            function isApiKeyValid() {
+                return API_KEY && API_KEY !== 'sk-你的API密钥请在这里替换' && API_KEY.startsWith('sk-');
+            }
+
+            function updateApiStatus() {
+                if (isApiKeyValid()) {
+                    statusDot.className = 'status-dot';
+                    statusText.textContent = 'DeepSeek AI 就绪';
+                } else {
+                    statusDot.className = 'status-dot error';
+                    statusText.textContent = '请配置 API Key';
+                }
+            }
+
+            function scrollToBottom() {
+                messagesBox.scrollTop = messagesBox.scrollHeight;
+            }
+
+            function addMessage(role, content) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${role}`;
+                const avatarIcon = role === 'user' ? '👤' : '🏯';
+                const avatarDiv = document.createElement('div');
+                avatarDiv.className = 'avatar';
+                avatarDiv.textContent = avatarIcon;
+                const bubbleDiv = document.createElement('div');
+                bubbleDiv.className = 'bubble';
+                bubbleDiv.textContent = content;
+                if (role === 'user') {
+                    messageDiv.appendChild(bubbleDiv);
+                    messageDiv.appendChild(avatarDiv);
+                } else {
+                    messageDiv.appendChild(avatarDiv);
+                    messageDiv.appendChild(bubbleDiv);
+                }
+                messagesBox.appendChild(messageDiv);
+                scrollToBottom();
+            }
+
+            async function callDeepSeekAPI(userMessage) {
+                conversationHistory.push({ role: "user", content: userMessage });
+
+                if (conversationHistory.length > 25) {
+                    const systemMsg = conversationHistory[0];
+                    const recent = conversationHistory.slice(-24);
+                    conversationHistory = [systemMsg, ...recent];
+                }
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: MODEL,
+                        messages: conversationHistory,
+                        temperature: 0.7,
+                        max_tokens: 1000,
+                        stream: false
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMsg = errorData.error?.message || `HTTP ${response.status}`;
+                    
+                    if (response.status === 401) {
+                        throw new Error('API Key 无效，请检查代码中的 API_KEY 是否正确');
+                    } else if (response.status === 402) {
+                        throw new Error('账户余额不足，请前往 platform.deepseek.com 充值（最低1元）');
+                    } else if (response.status === 429) {
+                        throw new Error('请求过于频繁，请稍后再试');
+                    } else {
+                        throw new Error(`请求失败: ${errorMsg}`);
+                    }
+                }
+
+                const data = await response.json();
+                const assistantReply = data.choices?.[0]?.message?.content;
+
+                if (!assistantReply) {
+                    throw new Error('未获取到有效回复');
+                }
+
+                conversationHistory.push({ role: "assistant", content: assistantReply });
+                return assistantReply;
+            }
+
+            async function handleSendMessage() {
+                if (isProcessing) return;
+                
+                if (!isApiKeyValid()) {
+                    alert('请先在代码中配置 DeepSeek API Key！\n\n找到代码中的 API_KEY 变量，替换为你的密钥。\n获取地址：platform.deepseek.com/api_keys');
+                    return;
+                }
+
+                const userText = userInput.value.trim();
+                if (userText === '') return;
+
+                addMessage('user', userText);
+                userInput.value = '';
+                isProcessing = true;
+                sendBtn.disabled = true;
+                statusText.textContent = '思考中...';
+
+                try {
+                    const reply = await callDeepSeekAPI(userText);
+                    addMessage('assistant', reply);
+                    statusText.textContent = 'DeepSeek AI 就绪';
+                } catch (error) {
+                    addMessage('assistant', `❌ ${error.message}`);
+                    statusText.textContent = '请求失败';
+                    statusDot.className = 'status-dot error';
+                    setTimeout(() => {
+                        if (isApiKeyValid()) {
+                            statusDot.className = 'status-dot';
+                            statusText.textContent = 'DeepSeek AI 就绪';
+                        }
+                    }, 5000);
+                }
+
+                isProcessing = false;
+                sendBtn.disabled = false;
+                userInput.focus();
+            }
+
+            sendBtn.addEventListener('click', handleSendMessage);
+            userInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                }
+            });
+
+            // 初始化
+            updateApiStatus();
+            userInput.focus();
+        })();
+    </script>
+</body>
+</html>
