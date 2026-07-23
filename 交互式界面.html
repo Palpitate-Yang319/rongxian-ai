@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>清华大学乡村振兴工作站 · 陶器3D数字展馆</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      overflow: hidden;
+      background: #1a1a2e;
+      /* 禁止iOS弹性滚动 */
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      touch-action: manipulation;
+    }
+    #modelSelector {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #0f0c29 0%, #1a1a2e 50%, #16213e 100%);
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    #modelSelector.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .selector-container {
+      width: 90%;
+      max-width: 900px;
+      text-align: center;
+      padding: 30px 0;
+    }
+    .selector-header {
+      margin-bottom: 30px;
+    }
+    .selector-logo {
+      font-size: 48px;
+      margin-bottom: 15px;
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    .selector-title {
+      font-size: clamp(22px, 5vw, 32px);
+      font-weight: bold;
+      background: linear-gradient(135deg, #ffaa00, #ff6b6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+    .selector-subtitle {
+      color: #8892b0;
+      font-size: clamp(12px, 2.5vw, 15px);
+      letter-spacing: 2px;
+      padding: 0 10px;
+    }
+    .model-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      padding: 0 10px;
+    }
+    @media (min-width: 768px) {
+      .model-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+      }
+      .selector-logo {
+        font-size: 64px;
+      }
+      .selector-header {
+        margin-bottom: 50px;
+      }
+    }
+    .model-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 20px 12px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .model-card:active {
+      transform: scale(0.95);
+      border-color: rgba(255, 170, 0, 0.6);
+      background: rgba(255, 170, 0, 0.1);
+    }
+    @media (hover: hover) {
+      .model-card:hover {
+        transform: translateY(-8px);
+        border-color: rgba(255, 170, 0, 0.5);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 60px rgba(255, 170, 0, 0.1);
+      }
+    }
+    .card-icon {
+      font-size: 36px;
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 1;
+    }
+    .card-name {
+      color: #ccd6f6;
+      font-size: clamp(13px, 2.5vw, 16px);
+      font-weight: 600;
+      margin-bottom: 5px;
+      position: relative;
+      z-index: 1;
+    }
+    .card-desc {
+      color: #8892b0;
+      font-size: clamp(10px, 2vw, 12px);
+      position: relative;
+      z-index: 1;
+    }
+    .card-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(255, 170, 0, 0.2);
+      color: #ffaa00;
+      font-size: 9px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      z-index: 1;
+    }
+    #info {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(0, 0, 0, 0.75);
+      color: white;
+      padding: 8px 14px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      pointer-events: none;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      font-size: clamp(11px, 2vw, 14px);
+      border-left: 3px solid #ffaa00;
+      z-index: 10;
+      max-width: calc(100% - 80px);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #backBtn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(10px);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 8px 14px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: clamp(12px, 2.5vw, 14px);
+      z-index: 10;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    #backBtn:active {
+      background: rgba(255, 170, 0, 0.4);
+      border-color: #ffaa00;
+      transform: scale(0.95);
+    }
+    .controls-panel {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(20, 20, 30, 0.8);
+      backdrop-filter: blur(15px);
+      border-radius: 40px;
+      padding: 8px 16px;
+      display: flex;
+      gap: 6px;
+      color: #ddd;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.2);
+      z-index: 10;
+      flex-wrap: nowrap;
+    }
+    @media (min-width: 768px) {
+      .controls-panel {
+        gap: 15px;
+        padding: 10px 25px;
+        bottom: 30px;
+      }
+    }
+    .control-btn {
+      background: rgba(255,255,255,0.08);
+      border: none;
+      color: #ccc;
+      font-size: clamp(16px, 3vw, 20px);
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 25px;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      line-height: 1;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      white-space: nowrap;
+    }
+    .control-btn:active {
+      background: rgba(255,255,255,0.3);
+      color: white;
+      transform: scale(0.9);
+    }
+    .control-btn span {
+      font-size: clamp(9px, 1.8vw, 12px);
+      margin-left: 2px;
+      font-weight: 500;
+    }
+    @media (max-width: 480px) {
+      .control-btn span {
+        display: none;
+      }
+      .control-btn {
+        padding: 8px 10px;
+        font-size: 18px;
+      }
+    }
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      background: rgba(0,0,0,0.8);
+      padding: 12px 24px;
+      border-radius: 40px;
+      backdrop-filter: blur(10px);
+      font-size: clamp(14px, 3vw, 18px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top: 3px solid #ffaa00;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .instruction {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.6);
+      font-size: clamp(10px, 2vw, 13px);
+      background: rgba(0,0,0,0.5);
+      padding: 4px 12px;
+      border-radius: 20px;
+      backdrop-filter: blur(5px);
+      white-space: nowrap;
+      z-index: 10;
+      pointer-events: none;
+    }
+    @media (min-width: 768px) {
+      .instruction {
+        bottom: 100px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="modelSelector">
+    <div class="selector-container">
+      <div class="selector-header">
+        <div class="selector-logo">🏺</div>
+        <h1 class="selector-title">陶器3D模型数字展馆</h1>
+        <p class="selector-subtitle">清华大学乡村振兴工作站 · 数字化文化遗产展示</p>
+      </div>
+      <div class="model-grid">
+        <div class="model-card" onclick="loadModel('https://rongxian-3d.oss-cn-beijing.aliyuncs.com/nezha.glb?Expires=1784818028&OSSAccessKeyId=TMP.3KvqhLmaVpiAVsGoYr7u6HuPj2Ps8TtogcwPLXcxW7FQwZH7bNokjqiAXsv3baeAjyMJHh4C1s5co6MvyMruuezkWZ4nVM&Signature=c6dOnZ%2BuA2E2WEJxQOHxHy8XfhI%3D', '哪吒陶器模型', '🏺')">
+          <div class="card-badge">主展品</div>
+          <div class="card-icon">🏺</div>
+          <div class="card-name">魔童降世</div>
+          <div class="card-desc">高精度三维重建</div>
+        </div>
+        <div class="model-card" onclick="loadModel('https://rongxian-3d.oss-cn-beijing.aliyuncs.com/biggerone.glb?Expires=1784818435&OSSAccessKeyId=TMP.3L1pNwLVKADQcuDZ85sPkEjSHpeB98phPGuhavvRgttgK8mS2HSw6qGgnMN5Pdc1rpEH4CF2Q8vWjoPzXkx9kn2A4AG1gS&Signature=m5SzJuvRCTu0Z2I6UNl%2FEOrpT54%3D', '《念奴娇·赤壁怀古》诗词花瓶', '⛰️')">
+          <div class="card-icon">⛰️</div>
+          <div class="card-name">千里江山</div>
+          <div class="card-desc">高精度三维重建</div>
+        </div>
+        <div class="model-card" onclick="loadModel('https://rongxian-3d.oss-cn-beijing.aliyuncs.com/next.glb?Expires=1784818469&OSSAccessKeyId=TMP.3L1pNwLVKADQcuDZ85sPkEjSHpeB98phPGuhavvRgttgK8mS2HSw6qGgnMN5Pdc1rpEH4CF2Q8vWjoPzXkx9kn2A4AG1gS&Signature=oC9rgFdBt%2BvBSMJExPpdBAwjyxQ%3D', '【冰清玉润】陶器模型', '🧊')">
+          <div class="card-icon">🧊</div>
+          <div class="card-name">冰清玉润</div>
+          <div class="card-desc">高精度三维重建</div>
+        </div>
+        <div class="model-card" onclick="loadModel('https://rongxian-3d.oss-cn-beijing.aliyuncs.com/qianlijiangshan.glb?Expires=1784818495&OSSAccessKeyId=TMP.3L1pNwLVKADQcuDZ85sPkEjSHpeB98phPGuhavvRgttgK8mS2HSw6qGgnMN5Pdc1rpEH4CF2Q8vWjoPzXkx9kn2A4AG1gS&Signature=I1sG3%2Br4HrtbN%2FUnf%2Ffrz8FVaJI%3D', '富春山居·茶壶', '🔵')">
+          <div class="card-icon">🔵</div>
+          <div class="card-name">富春山居</div>
+          <div class="card-desc">高精度三维重建</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="info">🔍 <strong>3D陶瓷 重建模型</strong> | 单指旋转 / 双指缩放</div>
+  <button id="backBtn" onclick="goBack()">← 返回</button>
+  <div class="loading" id="loading" style="display:none;"><div class="spinner"></div> 加载模型中...</div>
+  <div class="instruction" id="instruction-hint">👆 单指旋转 | 🤏 双指缩放 | ✌️ 双指平移</div>
+  
+  <div class="controls-panel">
+    <button class="control-btn" id="btn-reset" title="重置视角">🔄 <span>重置</span></button>
+    <button class="control-btn" id="btn-top" title="俯视图">⬆️ <span>顶部</span></button>
+    <button class="control-btn" id="btn-front" title="前视图">🔲 <span>正面</span></button>
+    <button class="control-btn" id="btn-side" title="侧视图">↔️ <span>侧面</span></button>
+    <button class="control-btn" id="btn-zoom-in" title="放大">➕</button>
+    <button class="control-btn" id="btn-zoom-out" title="缩小">➖</button>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+    // --- 场景初始化 ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a2e);
+    scene.fog = new THREE.Fog(0x1a1a2e, 5, 25);
+    
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(5, 3, 8);
+    camera.lookAt(0, 0.5, 0);
+    
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: true,
+      powerPreference: "high-performance"
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    document.body.appendChild(renderer.domElement);
+    
+    // --- 控制器（已完美支持触屏） ---
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.rotateSpeed = 0.6;
+    controls.zoomSpeed = 1.0;
+    controls.panSpeed = 0.8;
+    controls.minDistance = 1.5;
+    controls.maxDistance = 20;
+    controls.maxPolarAngle = Math.PI;
+    controls.target.set(0, 0.5, 0);
+    // 触屏支持
+    controls.touches = {
+      ONE: THREE.TOUCH.ROTATE,
+      TWO: THREE.TOUCH.DOLLY_PAN
+    };
+    controls.update();
+    
+    // --- 光照 ---
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+    
+    const keyLight = new THREE.DirectionalLight(0xfff5e6, 1.4);
+    keyLight.position.set(5, 10, 7);
+    keyLight.castShadow = true;
+    keyLight.receiveShadow = true;
+    keyLight.shadow.mapSize.width = 1024;
+    keyLight.shadow.mapSize.height = 1024;
+    keyLight.shadow.camera.near = 0.5;
+    keyLight.shadow.camera.far = 50;
+    scene.add(keyLight);
+    
+    const fillLight = new THREE.DirectionalLight(0xccddff, 0.8);
+    fillLight.position.set(-3, 0, -5);
+    scene.add(fillLight);
+    
+    const rimLight = new THREE.PointLight(0x4466aa, 0.6, 12);
+    rimLight.position.set(0, -2, 2);
+    scene.add(rimLight);
+    
+    const topLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    topLight.position.set(0, 8, 2);
+    scene.add(topLight);
+    
+    // --- 地面网格 ---
+    const gridHelper = new THREE.GridHelper(6, 20, 0x335577, 0x224466);
+    gridHelper.position.y = -0.8;
+    scene.add(gridHelper);
+    
+    // --- 星星粒子 ---
+    const starsGeometry = new THREE.BufferGeometry();
+    const starsPositions = new Float32Array(200 * 3);
+    for (let i = 0; i < 200 * 3; i += 3) {
+      starsPositions[i] = (Math.random() - 0.5) * 20;
+      starsPositions[i+1] = (Math.random() - 0.5) * 10 + 2;
+      starsPositions[i+2] = (Math.random() - 0.5) * 15;
+    }
+    starsGeometry.setAttribute('position', new THREE.BufferAttribute(starsPositions, 3));
+    const stars = new THREE.Points(starsGeometry, new THREE.PointsMaterial({
+      color: 0xaaccff, size: 0.05, blending: THREE.AdditiveBlending
+    }));
+    scene.add(stars);
+    
+    // --- 加载器 ---
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.1/');
+    const loader = new GLTFLoader();
+    loader.setDRACOLoader(dracoLoader);
+    
+    let loadedModel = null;
+
+    window.loadModel = function(modelPath, modelName, icon) {
+      document.getElementById('modelSelector').classList.add('hidden');
+      const loadingEl = document.getElementById('loading');
+      loadingEl.style.display = 'flex';
+      document.getElementById('info').innerHTML = `${icon} <strong>${modelName}</strong> | 单指旋转 / 双指缩放`;
+      
+      if (loadedModel) {
+        scene.remove(loadedModel);
+      }
+      
+      loader.load(
+        modelPath,
+        (gltf) => {
+          const model = gltf.scene;
+          loadedModel = model;
+          loadingEl.style.display = 'none';
+          
+          const box = new THREE.Box3().setFromObject(model);
+          const center = box.getCenter(new THREE.Vector3());
+          const size = box.getSize(new THREE.Vector3());
+          
+          model.position.x = -center.x;
+          model.position.y = -center.y + size.y / 2;
+          model.position.z = -center.z;
+          
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const scale = 3.5 / maxDim;
+          model.scale.set(scale, scale, scale);
+          
+          const newBox = new THREE.Box3().setFromObject(model);
+          const newCenter = newBox.getCenter(new THREE.Vector3());
+          controls.target.copy(newCenter);
+          
+          model.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+              if (child.material) {
+                child.material.needsUpdate = true;
+                if (child.material.isMeshStandardMaterial && child.material.roughness > 0.85) {
+                  child.material.roughness = 0.75;
+                }
+                if (child.material.isMeshBasicMaterial) {
+                  const oldColor = child.material.color.clone();
+                  const oldMap = child.material.map;
+                  child.material = new THREE.MeshStandardMaterial({
+                    color: oldColor, map: oldMap, roughness: 0.6, metalness: 0.05
+                  });
+                }
+              }
+            }
+          });
+          
+          scene.add(model);
+          controls.update();
+        },
+        (progress) => {
+          const percent = Math.floor((progress.loaded / progress.total) * 100);
+          loadingEl.innerHTML = `<div class="spinner"></div> 加载中... ${percent}%`;
+        },
+        (error) => {
+          console.error('模型加载失败:', error);
+          loadingEl.innerHTML = '❌ 加载失败，请检查网络';
+        }
+      );
+    };
+    
+    window.goBack = function() {
+      document.getElementById('modelSelector').classList.remove('hidden');
+    };
+    
+    // --- 按钮事件 ---
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      camera.position.set(5, 3, 8);
+      controls.target.set(0, 0.5, 0);
+      controls.update();
+    });
+    
+    document.getElementById('btn-top').addEventListener('click', () => {
+      if (loadedModel) {
+        const box = new THREE.Box3().setFromObject(loadedModel);
+        const center = box.getCenter(new THREE.Vector3());
+        const dist = camera.position.distanceTo(controls.target);
+        camera.position.set(center.x, center.y + dist, center.z);
+        controls.target.copy(center);
+      }
+      controls.update();
+    });
+    
+    document.getElementById('btn-front').addEventListener('click', () => {
+      if (loadedModel) {
+        const box = new THREE.Box3().setFromObject(loadedModel);
+        const center = box.getCenter(new THREE.Vector3());
+        const dist = camera.position.distanceTo(controls.target);
+        camera.position.set(center.x, center.y, center.z + dist);
+        controls.target.copy(center);
+      }
+      controls.update();
+    });
+    
+    document.getElementById('btn-side').addEventListener('click', () => {
+      if (loadedModel) {
+        const box = new THREE.Box3().setFromObject(loadedModel);
+        const center = box.getCenter(new THREE.Vector3());
+        const dist = camera.position.distanceTo(controls.target);
+        camera.position.set(center.x + dist, center.y, center.z);
+        controls.target.copy(center);
+      }
+      controls.update();
+    });
+    
+    document.getElementById('btn-zoom-in').addEventListener('click', () => {
+      const direction = new THREE.Vector3();
+      camera.getWorldDirection(direction);
+      if (camera.position.distanceTo(controls.target) > controls.minDistance + 0.2) {
+        camera.position.addScaledVector(direction, 0.5);
+      }
+      controls.update();
+    });
+    
+    document.getElementById('btn-zoom-out').addEventListener('click', () => {
+      const direction = new THREE.Vector3();
+      camera.getWorldDirection(direction);
+      if (camera.position.distanceTo(controls.target) < controls.maxDistance - 0.2) {
+        camera.position.addScaledVector(direction, -0.5);
+      }
+      controls.update();
+    });
+    
+    // 键盘快捷键
+    window.addEventListener('keydown', (e) => {
+      switch(e.key.toLowerCase()) {
+        case 'r': document.getElementById('btn-reset').click(); break;
+        case 't': document.getElementById('btn-top').click(); break;
+        case 'f': document.getElementById('btn-front').click(); break;
+        case 's': document.getElementById('btn-side').click(); break;
+        case '+': case '=': document.getElementById('btn-zoom-in').click(); break;
+        case '-': document.getElementById('btn-zoom-out').click(); break;
+      }
+    });
+    
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+    
+    // 阻止iOS橡皮筋效果影响3D操作
+    document.addEventListener('touchmove', function(e) {
+      if (e.target === renderer.domElement || renderer.domElement.contains(e.target)) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+    
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      stars.rotation.y += 0.0001;
+      stars.rotation.x += 0.00005;
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
